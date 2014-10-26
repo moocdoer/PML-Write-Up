@@ -1,0 +1,122 @@
+---
+title: "Exploratory Analysis"
+author: "moocdoer"
+date: "26 October 2014"
+output: html_document
+---
+
+## This is not the Write Up document. Please check HAR-Write-Up.Rmd and HAR-Write-Up.html
+
+```{r}
+# Clean workspace
+rm(list = ls())
+
+# Load libs
+library(caret)
+library(dplyr)
+
+# Load train and test sets
+trainSet = read.csv('pml-training.csv')
+testSet = read.csv('pml-testing.csv')
+
+# Summarise sets
+summary(trainSet)
+summary(testSet)
+
+# Summarise the outcome
+summary(trainSet$classe)
+
+# There are many variables with no values and of no interest
+# Select the variables that matter
+
+trainSet = select(
+    trainSet,
+    roll_belt,pitch_belt,
+    yaw_belt,
+    total_accel_belt,
+    gyros_belt_x,
+    gyros_belt_y,
+    gyros_belt_z,
+    accel_belt_x,
+    accel_belt_y,
+    accel_belt_z,
+    magnet_belt_x,
+    magnet_belt_y,
+    magnet_belt_z,
+    roll_arm,
+    pitch_arm,
+    yaw_arm,
+    total_accel_arm,
+    gyros_arm_x,
+    gyros_arm_y,
+    gyros_arm_z,
+    accel_arm_x,
+    accel_arm_y,
+    accel_arm_z,
+    magnet_arm_x,
+    magnet_arm_y,
+    magnet_arm_z,
+    roll_dumbbell,
+    pitch_dumbbell,
+    yaw_dumbbell,
+    total_accel_dumbbell,
+    gyros_dumbbell_x,
+    gyros_dumbbell_y,
+    gyros_dumbbell_z,
+    accel_dumbbell_x,
+    accel_dumbbell_y,
+    accel_dumbbell_z,
+    magnet_dumbbell_x,
+    magnet_dumbbell_y,
+    magnet_dumbbell_z,
+    roll_forearm,
+    pitch_forearm,
+    yaw_forearm,
+    total_accel_forearm,
+    gyros_forearm_x,
+    gyros_forearm_y,
+    gyros_forearm_z,
+    accel_forearm_x,
+    accel_forearm_y,
+    accel_forearm_z,
+    magnet_forearm_x,
+    magnet_forearm_y,
+    magnet_forearm_z,
+    classe
+)
+
+# Create partitions
+inTrain = createDataPartition(y = trainSet$classe, p = .8, list = F)
+
+isData = trainSet[inTrain, ]
+osData = trainSet[-inTrain, ]
+
+# Random forest
+rfModel = randomForest(classe ~ ., data = isData, p = .1, ntree = 100)
+
+# Measure train error
+isPred = predict(rfModel, newdata = isData)
+table(isPred, isData$classe)
+sum(isPred != isData$classe) / length(isPred)
+
+# Measure test error
+osPred = predict(rfModel, newdata = osData)
+table(osPred, osData$classe)
+sum(osPred != osData$classe) / length(osPred)
+
+# Create answers for coding thing
+testPred = predict(rfModel, newdata = testSet)
+
+n = length(testPred)
+for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(
+        testPred[i],
+        file=filename,
+        quote=FALSE,
+        row.names=FALSE,
+        col.names=FALSE
+    )
+}
+```
+
